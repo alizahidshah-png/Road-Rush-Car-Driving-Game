@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Road Rush — Car Driving</title>
+<style>
+:root{--neon:#7cffcb;--ink:#08131c;--panel:#101f2b}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#173246,#071018 70%);color:#f4fbff;font-family:system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh;display:flex;justify-content:center;align-items:center;padding:14px}
+.wrap{width:min(100%,520px)}header{display:flex;justify-content:space-between;align-items:center;margin:0 2px 12px}.logo{font-size:22px;font-weight:900;letter-spacing:1px}.logo span{color:var(--neon)}.tag{font-size:11px;color:#9bb4c4;letter-spacing:2px}
+.hud{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}.stat{background:#102330;border:1px solid #294452;border-radius:12px;padding:9px 10px}.stat small{display:block;color:#8da9b8;font-size:10px;text-transform:uppercase;letter-spacing:1px}.stat strong{font-size:18px}
+.gamebox{position:relative;border:2px solid #294452;border-radius:18px;overflow:hidden;box-shadow:0 18px 55px #0008;background:#182b28}canvas{display:block;width:100%;height:auto;touch-action:none}
+.overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#06121bdc;padding:24px;text-align:center}.overlay.hidden{display:none}.modal{max-width:320px}.modal h1{font-size:34px;line-height:1;margin:0 0 12px}.modal p{color:#b5c9d4;line-height:1.5;font-size:14px}.btn{border:0;border-radius:12px;padding:12px 18px;font-weight:900;background:var(--neon);color:#06151b;cursor:pointer;font-size:15px}.btn.secondary{background:#223b49;color:#effaff;border:1px solid #476273}.levels{display:flex;gap:7px;justify-content:center;flex-wrap:wrap;margin:14px 0}.level{padding:7px 10px;border-radius:9px;background:#152a36;border:1px solid #355261;color:#94acb8;font-size:12px}.level.active{border-color:var(--neon);color:var(--neon)}
+.controls{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:12px}.steer{display:flex;gap:10px}.control{width:68px;height:56px;border-radius:15px;border:1px solid #345362;background:#132733;color:white;font-size:25px;font-weight:bold;touch-action:manipulation}.control:active{background:#275263}.hint{font-size:11px;color:#8ca7b7;text-align:right;line-height:1.5}.progress{height:5px;background:#18303d;border-radius:8px;overflow:hidden;margin-top:10px}.progress div{height:100%;width:0;background:var(--neon);transition:width .2s}
+footer{text-align:center;color:#6f8b9b;font-size:11px;margin-top:12px}
+@media(min-width:520px){.control{width:78px;height:60px}}
+</style>
+</head>
+<body><main class="wrap">
+<header><div><div class="logo">ROAD <span>RUSH</span></div><div class="tag">DRIVE • DODGE • SURVIVE</div></div><button class="btn secondary" id="pauseBtn">Ⅱ Pause</button></header>
+<section class="hud"><div class="stat"><small>Stage</small><strong id="stage">1 / 5</strong></div><div class="stat"><small>Distance</small><strong id="distance">0 m</strong></div><div class="stat"><small>Coins</small><strong id="coins">0</strong></div></section>
+<div class="gamebox"><canvas id="game" width="420" height="620" aria-label="Car driving game"></canvas>
+<div class="overlay" id="overlay"><div class="modal"><h1 id="title">ROAD RUSH</h1><p id="message">Traffic se bacho, coins collect karo aur 5 exciting stages unlock karo.</p><div class="levels" id="levels"></div><button class="btn" id="startBtn">START DRIVING ▶</button></div></div></div>
+<div class="progress"><div id="bar"></div></div>
+<div class="controls"><div class="steer"><button class="control" id="left" aria-label="Steer left">◀</button><button class="control" id="right" aria-label="Steer right">▶</button></div><div class="hint">Keyboard: ← → / A D<br>Mobile: buttons or tap sides</div></div>
+<footer>Collect coins • Avoid traffic • Beat all 5 stages</footer>
+</main>
+<script>
+(()=>{
+const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
+const $=id=>document.getElementById(id);
+const stages=[
+{name:'Suburban Drive',goal:500,speed:3.3,traffic:0.010,road:'#303b43',sky:'#7cb8bd'},
+{name:'Desert Highway',goal:750,speed:3.8,traffic:0.013,road:'#3b3d40',sky:'#e3a35c'},
+{name:'Night City',goal:950,speed:4.3,traffic:0.016,road:'#242c3b',sky:'#303d6b'},
+{name:'Rainy Mountain',goal:1150,speed:4.7,traffic:0.019,road:'#303940',sky:'#8799a7'},
+{name:'Neon Rush',goal:1400,speed:5.2,traffic:0.022,road:'#20252e',sky:'#512d73'}
+];
+let stage=0,distance=0,coins=0,best=0,running=false,paused=false,over=false,carX=210,roadOffset=0,objects=[],spawn=0,keys={};
+const lanes=[115,210,305];
+function stagePills(){ $('levels').innerHTML=stages.map((s,i)=>`<span class="level ${i===stage?'active':''}">${i+1}. ${s.name}</span>`).join('');}
+function reset(){distance=0;coins=0;carX=210;roadOffset=0;objects=[];spawn=0;over=false;paused=false;running=true;$('overlay').classList.add('hidden');$('pauseBtn').textContent='Ⅱ Pause';last=0;requestAnimationFrame(loop);}
+function show(title,msg,button='PLAY AGAIN ▶'){running=false;$('title').textContent=title;$('message').textContent=msg;$('startBtn').textContent=button;$('overlay').classList.remove('hidden');stagePills();}
+function drawCar(x,y,color,player=false){
+ ctx.save();ctx.translate(x,y);
+ ctx.fillStyle='#0006';ctx.fillRect(-15,8,34,48);
+ ctx.fillStyle='#111820';ctx.fillRect(-18,7,7,14);ctx.fillRect(11,7,7,14);ctx.fillRect(-18,35,7,14);ctx.fillRect(11,35,7,14);
+ ctx.fillStyle=color;roundRect(-14,0,28,52,7);ctx.fill();
+ ctx.fillStyle=player?'#b7f9ff':'#b9d4e2';roundRect(-9,8,18,15,4);ctx.fill();
+ ctx.fillStyle='#193346';roundRect(-9,29,18,10,3);ctx.fill();
+ ctx.fillStyle=player?'#fff3a1':'#ff5d64';ctx.fillRect(-11,2,6,4);ctx.fillRect(5,2,6,4);
+ ctx.restore();
+}
+function roundRect(x,y,w,h,r){ctx.beginPath();ctx.roundRect(x,y,w,h,r);}
+function background(){
+ const s=stages[stage];ctx.fillStyle=s.sky;ctx.fillRect(0,0,420,620);
+ ctx.fillStyle=stage===1?'#c68d4c':stage===2?'#17232d':stage===4?'#29203b':'#285044';ctx.fillRect(0,0,65,620);ctx.fillRect(355,0,65,620);
+ if(stage===2||stage===4){for(let i=0;i<7;i++){let y=(i*105+roadOffset*1.7)%700-70;ctx.fillStyle=stage===4?'#8c4cff':'#1c2a3d';ctx.fillRect(12,y,38,65);ctx.fillRect(368,y,38,65);ctx.fillStyle='#f4d16a';ctx.fillRect(22,y+12,5,6);ctx.fillRect(38,y+12,5,6);}}
+ ctx.fillStyle=s.road;ctx.fillRect(65,0,290,620);
+ ctx.fillStyle='#d8d6bd';ctx.fillRect(70,0,3,620);ctx.fillRect(347,0,3,620);
+ ctx.fillStyle=stage===4?'#c17cff':'#e8e6cf';for(let y=-70;y<650;y+=95){let yy=(y+roadOffset)%700;ctx.fillRect(162,yy,5,48);ctx.fillRect(253,yy,5,48);}
+ if(stage===3){ctx.strokeStyle='#bde7ff66';ctx.lineWidth=2;for(let i=0;i<28;i++){let x=(i*53+roadOffset*2)%420,y=(i*97+roadOffset*3)%620;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-8,y+18);ctx.stroke();}}
+}
+function spawnObject(){
+ const lane=lanes[Math.floor(Math.random()*3)];
+ if(Math.random()<.72)objects.push({type:'car',x:lane,y:-60,color:['#f15b5b','#f2bd4e','#51b6e8','#b47af0'][Math.floor(Math.random()*4)]});
+ else objects.push({type:'coin',x:lane,y:-25});
+}
+let last=0;
+function loop(t){if(!running||paused)return;let dt=Math.min((t-last)/16.67||1,2);last=t;update(dt);render();requestAnimationFrame(loop);}
+function update(dt){
+ const s=stages[stage];distance+=s.speed*dt*.45;roadOffset=(roadOffset+s.speed*dt*2.2)%95;
+ if(keys.left)carX-=4.3*dt;if(keys.right)carX+=4.3*dt;carX=Math.max(91,Math.min(329,carX));
+ spawn-=dt;if(spawn<=0){spawnObject();spawn= Math.max(24,75-stage*8)*(.65+Math.random()*.7);}
+ for(let o of objects){o.y+=(o.type==='coin'?s.speed*2.1:s.speed*1.65)*dt;}
+ objects=objects.filter(o=>o.y<670);
+ for(let o of objects){if(o.hit)continue;let dx=Math.abs(o.x-carX),dy=Math.abs(o.y-510);
+ if(o.type==='coin'&&dx<25&&dy<34){coins++;o.hit=true;}
+ if(o.type==='car'&&dx<27&&dy<43){show('CRASH! 💥',`Distance: ${Math.floor(distance)} m • Coins: ${coins}. Try again and dodge the traffic.`,'RETRY STAGE ↻');return;}}
+ if(distance>=s.goal){if(stage<stages.length-1){stage++;show('STAGE COMPLETE! ✨',`${s.name} complete! Next up: ${stages[stage].name}.`,'NEXT STAGE ▶');}else{show('YOU ARE A LEGEND! 🏆',`All 5 stages cleared! Distance: ${Math.floor(distance)} m • Coins: ${coins}.`,'RACE AGAIN ↻');stage=0;}return;}
+ $('stage').textContent=`${stage+1} / 5`;$('distance').textContent=Math.floor(distance)+' m';$('coins').textContent=coins;$('bar').style.width=(distance/s.goal*100)+'%';
+}
+function render(){background();for(const o of objects){if(o.hit)continue;if(o.type==='coin'){ctx.beginPath();ctx.fillStyle='#ffd84d';ctx.arc(o.x,o.y,10,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#fff2a1';ctx.lineWidth=3;ctx.stroke();ctx.fillStyle='#98600a';ctx.font='bold 12px sans-serif';ctx.textAlign='center';ctx.fillText('$',o.x,o.y+4);}else drawCar(o.x,o.y,o.color);}
+ drawCar(carX,510,'#28d9a1',true);
+ ctx.fillStyle='#ffffffcc';ctx.font='bold 12px system-ui';ctx.textAlign='left';ctx.fillText(stages[stage].name.toUpperCase(),84,24);
+}
+function togglePause(){if(!running)return;paused=!paused;if(paused){$('pauseBtn').textContent='▶ Resume';showPause();}else{$('overlay').classList.add('hidden');$('pauseBtn').textContent='Ⅱ Pause';last=0;requestAnimationFrame(loop);}}
+function showPause(){ $('title').textContent='PAUSED';$('message').textContent='Take a breather. Ready to hit the road again?';$('startBtn').textContent='RESUME ▶';$('levels').innerHTML='';$('overlay').classList.remove('hidden');}
+$('startBtn').addEventListener('click',()=>{if(paused){paused=false;$('overlay').classList.add('hidden');$('pauseBtn').textContent='Ⅱ Pause';last=0;requestAnimationFrame(loop);}else if(over){reset();}else reset();});
+$('pauseBtn').addEventListener('click',togglePause);
+window.addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();if(e.key==='ArrowLeft'||e.key.toLowerCase()==='a')keys.left=true;if(e.key==='ArrowRight'||e.key.toLowerCase()==='d')keys.right=true;if(e.key==='Escape')togglePause();});
+window.addEventListener('keyup',e=>{if(e.key==='ArrowLeft'||e.key.toLowerCase()==='a')keys.left=false;if(e.key==='ArrowRight'||e.key.toLowerCase()==='d')keys.right=false;});
+function hold(id,key){const el=$(id);el.addEventListener('pointerdown',e=>{e.preventDefault();keys[key]=true;el.setPointerCapture?.(e.pointerId);});['pointerup','pointercancel','lostpointercapture'].forEach(ev=>el.addEventListener(ev,()=>keys[key]=false));}
+hold('left','left');hold('right','right');
+canvas.addEventListener('pointerdown',e=>{const r=canvas.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*420;keys[x<210?'left':'right']=true;setTimeout(()=>{keys.left=false;keys.right=false;},180);});
+stagePills();render();
+})();
+</script></body></html>
