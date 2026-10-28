@@ -1,98 +1,78 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Road Rush — Car Driving</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Road Rush 3D — Driving Simulator</title>
 <style>
-:root{--neon:#7cffcb;--ink:#08131c;--panel:#101f2b}
-*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#173246,#071018 70%);color:#f4fbff;font-family:system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh;display:flex;justify-content:center;align-items:center;padding:14px}
-.wrap{width:min(100%,520px)}header{display:flex;justify-content:space-between;align-items:center;margin:0 2px 12px}.logo{font-size:22px;font-weight:900;letter-spacing:1px}.logo span{color:var(--neon)}.tag{font-size:11px;color:#9bb4c4;letter-spacing:2px}
-.hud{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}.stat{background:#102330;border:1px solid #294452;border-radius:12px;padding:9px 10px}.stat small{display:block;color:#8da9b8;font-size:10px;text-transform:uppercase;letter-spacing:1px}.stat strong{font-size:18px}
-.gamebox{position:relative;border:2px solid #294452;border-radius:18px;overflow:hidden;box-shadow:0 18px 55px #0008;background:#182b28}canvas{display:block;width:100%;height:auto;touch-action:none}
-.overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#06121bdc;padding:24px;text-align:center}.overlay.hidden{display:none}.modal{max-width:320px}.modal h1{font-size:34px;line-height:1;margin:0 0 12px}.modal p{color:#b5c9d4;line-height:1.5;font-size:14px}.btn{border:0;border-radius:12px;padding:12px 18px;font-weight:900;background:var(--neon);color:#06151b;cursor:pointer;font-size:15px}.btn.secondary{background:#223b49;color:#effaff;border:1px solid #476273}.levels{display:flex;gap:7px;justify-content:center;flex-wrap:wrap;margin:14px 0}.level{padding:7px 10px;border-radius:9px;background:#152a36;border:1px solid #355261;color:#94acb8;font-size:12px}.level.active{border-color:var(--neon);color:var(--neon)}
-.controls{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:12px}.steer{display:flex;gap:10px}.control{width:68px;height:56px;border-radius:15px;border:1px solid #345362;background:#132733;color:white;font-size:25px;font-weight:bold;touch-action:manipulation}.control:active{background:#275263}.hint{font-size:11px;color:#8ca7b7;text-align:right;line-height:1.5}.progress{height:5px;background:#18303d;border-radius:8px;overflow:hidden;margin-top:10px}.progress div{height:100%;width:0;background:var(--neon);transition:width .2s}
-footer{text-align:center;color:#6f8b9b;font-size:11px;margin-top:12px}
-@media(min-width:520px){.control{width:78px;height:60px}}
+:root{color-scheme:dark;font-family:system-ui,-apple-system,Segoe UI,sans-serif}*{box-sizing:border-box}body{margin:0;background:#101820;color:#fff;overflow:hidden;touch-action:none}canvas{display:block;width:100vw;height:100vh}
+#hud{position:fixed;inset:12px 12px auto;display:flex;gap:8px;justify-content:space-between;pointer-events:none;flex-wrap:wrap}.panel{background:#07131dcc;border:1px solid #ffffff30;border-radius:13px;padding:9px 13px;backdrop-filter:blur(8px);min-width:76px}.label{font-size:10px;color:#9db7c6;text-transform:uppercase;letter-spacing:1.5px}.value{font-size:19px;font-weight:850}.right{margin-left:auto}#stageName{position:fixed;top:90px;left:50%;transform:translateX(-50%);font-weight:800;letter-spacing:2px;font-size:12px;text-shadow:0 2px 5px #000;white-space:nowrap}#message{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#04101bc9;padding:20px;text-align:center}#message.hide{display:none}.card{max-width:420px;background:#0a1a26ed;border:1px solid #ffffff30;border-radius:22px;padding:26px;box-shadow:0 20px 70px #0008}.card h1{font-size:clamp(30px,7vw,48px);margin:0 0 10px;line-height:1.05}.card p{color:#c1d2dc;line-height:1.5}.btn{border:0;border-radius:13px;padding:13px 19px;background:#ffd54f;color:#17202a;font-weight:900;font-size:15px;cursor:pointer}.tiny{font-size:12px;color:#8ea9b9;margin-top:12px}.controls{position:fixed;inset:auto 14px 18px;display:flex;justify-content:space-between;align-items:end;pointer-events:none}.cluster{display:flex;gap:10px;pointer-events:auto}.control{width:64px;height:62px;border:1px solid #ffffff55;border-radius:18px;background:#07131dcc;color:white;font-size:23px;font-weight:900;touch-action:none;user-select:none}.pedal{width:60px;height:72px;font-size:12px;letter-spacing:.5px}.control:active,.control.down{background:#e3ad24;color:#111}#pause{position:fixed;right:12px;top:102px;pointer-events:auto;border:1px solid #ffffff44;background:#07131dcc;color:white;border-radius:10px;padding:8px 12px;font-weight:700}#bar{position:fixed;left:12px;right:12px;bottom:6px;height:4px;background:#ffffff35;border-radius:5px;overflow:hidden}#bar span{display:block;width:0;height:100%;background:#ffd54f}@media(min-width:800px){.control{width:74px;height:66px}.pedal{height:76px;width:68px}}
 </style>
 </head>
-<body><main class="wrap">
-<header><div><div class="logo">ROAD <span>RUSH</span></div><div class="tag">DRIVE • DODGE • SURVIVE</div></div><button class="btn secondary" id="pauseBtn">Ⅱ Pause</button></header>
-<section class="hud"><div class="stat"><small>Stage</small><strong id="stage">1 / 5</strong></div><div class="stat"><small>Distance</small><strong id="distance">0 m</strong></div><div class="stat"><small>Coins</small><strong id="coins">0</strong></div></section>
-<div class="gamebox"><canvas id="game" width="420" height="620" aria-label="Car driving game"></canvas>
-<div class="overlay" id="overlay"><div class="modal"><h1 id="title">ROAD RUSH</h1><p id="message">Traffic se bacho, coins collect karo aur 5 exciting stages unlock karo.</p><div class="levels" id="levels"></div><button class="btn" id="startBtn">START DRIVING ▶</button></div></div></div>
-<div class="progress"><div id="bar"></div></div>
-<div class="controls"><div class="steer"><button class="control" id="left" aria-label="Steer left">◀</button><button class="control" id="right" aria-label="Steer right">▶</button></div><div class="hint">Keyboard: ← → / A D<br>Mobile: buttons or tap sides</div></div>
-<footer>Collect coins • Avoid traffic • Beat all 5 stages</footer>
-</main>
+<body>
+<div id="hud"><div class="panel"><div class="label">Stage</div><div class="value" id="stage">1 / 5</div></div><div class="panel"><div class="label">Speed</div><div class="value"><span id="speed">0</span> <small>km/h</small></div></div><div class="panel"><div class="label">Distance</div><div class="value"><span id="dist">0</span> m</div></div><div class="panel right"><div class="label">Coins</div><div class="value" id="coins">0</div></div></div>
+<div id="stageName">COUNTRY HIGHWAY</div><button id="pause">Ⅱ Pause</button>
+<div class="controls"><div class="cluster"><button class="control" id="left" aria-label="Steer left">◀</button><button class="control" id="right" aria-label="Steer right">▶</button></div><div class="cluster"><button class="control pedal" id="brake">BRAKE</button><button class="control pedal" id="gas">GAS ▲</button></div></div><div id="bar"><span></span></div>
+<div id="message"><div class="card"><h1>ROAD RUSH <span style="color:#ffd54f">3D</span></h1><p>A proper 3D highway driving game. Steer around traffic, accelerate, brake, collect coins and clear all five environments.</p><button class="btn" id="start">START ENGINE ▶</button><div class="tiny">Mobile: use steering + GAS/BRAKE · Computer: WASD or arrow keys<br>Three-dimensional graphics load with an internet connection.</div></div></div>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <script>
-(()=>{
-const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
+(()=> {
 const $=id=>document.getElementById(id);
-const stages=[
-{name:'Suburban Drive',goal:500,speed:3.3,traffic:0.010,road:'#303b43',sky:'#7cb8bd'},
-{name:'Desert Highway',goal:750,speed:3.8,traffic:0.013,road:'#3b3d40',sky:'#e3a35c'},
-{name:'Night City',goal:950,speed:4.3,traffic:0.016,road:'#242c3b',sky:'#303d6b'},
-{name:'Rainy Mountain',goal:1150,speed:4.7,traffic:0.019,road:'#303940',sky:'#8799a7'},
-{name:'Neon Rush',goal:1400,speed:5.2,traffic:0.022,road:'#20252e',sky:'#512d73'}
-];
-let stage=0,distance=0,coins=0,best=0,running=false,paused=false,over=false,carX=210,roadOffset=0,objects=[],spawn=0,keys={};
-const lanes=[115,210,305];
-function stagePills(){ $('levels').innerHTML=stages.map((s,i)=>`<span class="level ${i===stage?'active':''}">${i+1}. ${s.name}</span>`).join('');}
-function reset(){distance=0;coins=0;carX=210;roadOffset=0;objects=[];spawn=0;over=false;paused=false;running=true;$('overlay').classList.add('hidden');$('pauseBtn').textContent='Ⅱ Pause';last=0;requestAnimationFrame(loop);}
-function show(title,msg,button='PLAY AGAIN ▶'){running=false;$('title').textContent=title;$('message').textContent=msg;$('startBtn').textContent=button;$('overlay').classList.remove('hidden');stagePills();}
-function drawCar(x,y,color,player=false){
- ctx.save();ctx.translate(x,y);
- ctx.fillStyle='#0006';ctx.fillRect(-15,8,34,48);
- ctx.fillStyle='#111820';ctx.fillRect(-18,7,7,14);ctx.fillRect(11,7,7,14);ctx.fillRect(-18,35,7,14);ctx.fillRect(11,35,7,14);
- ctx.fillStyle=color;roundRect(-14,0,28,52,7);ctx.fill();
- ctx.fillStyle=player?'#b7f9ff':'#b9d4e2';roundRect(-9,8,18,15,4);ctx.fill();
- ctx.fillStyle='#193346';roundRect(-9,29,18,10,3);ctx.fill();
- ctx.fillStyle=player?'#fff3a1':'#ff5d64';ctx.fillRect(-11,2,6,4);ctx.fillRect(5,2,6,4);
- ctx.restore();
+if(!window.THREE){$('message').innerHTML='<div class="card"><h1>3D engine could not load</h1><p>Please check your internet connection and reload the page.</p><button class="btn" onclick="location.reload()">RELOAD</button></div>';return;}
+const THREE=window.THREE;
+const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.7));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;document.body.prepend(renderer.domElement);
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x91c7e9);scene.fog=new THREE.Fog(0x91c7e9,70,230);
+const camera=new THREE.PerspectiveCamera(62,innerWidth/innerHeight,.1,500);camera.position.set(0,5,11);
+scene.add(new THREE.HemisphereLight(0xd9efff,0x586247,2.1));
+const sun=new THREE.DirectionalLight(0xfff1d0,3.0);sun.position.set(-12,25,10);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-18;sun.shadow.camera.right=18;sun.shadow.camera.top=35;sun.shadow.camera.bottom=-25;scene.add(sun);
+const mat=(color,rough=.55,metal=0)=>new THREE.MeshStandardMaterial({color,roughness:rough,metalness:metal});
+const asphalt=mat(0x30363b,.95),lineMat=mat(0xf4f0d9,.6),grassM=mat(0x426b3c,1),darkGlass=mat(0x152a38,.25,.3),rubber=mat(0x111316,1),chrome=mat(0xb9c5cb,.28,.75),lamp= new THREE.MeshStandardMaterial({color:0xfff2bf,emissive:0xffc75e,emissiveIntensity:1.4}),tail= new THREE.MeshStandardMaterial({color:0xf3292e,emissive:0xb50000,emissiveIntensity:1});
+const stages=[{name:'COUNTRY HIGHWAY',goal:550,sky:0x91c7e9,ground:0x426b3c,road:0x30363b},{name:'DESERT ROUTE',goal:700,sky:0xeab77c,ground:0xb89b60,road:0x424044},{name:'NIGHT CITY',goal:850,sky:0x101b38,ground:0x252c39,road:0x292d35},{name:'ALPINE PASS',goal:1000,sky:0x9bb4c5,ground:0x4c6753,road:0x353b40},{name:'NEON EXPRESS',goal:1200,sky:0x30224e,ground:0x2b3940,road:0x24262f}];
+let stage=0,distance=0,coins=0,carX=0,speed=0,started=false,paused=false,ended=false,last=0,spawnTimer=0,roadTravel=0,objects=[],decor=[],keys={},steer=0;
+const world=new THREE.Group();scene.add(world);
+const road=new THREE.Mesh(new THREE.PlaneGeometry(13,500),asphalt);road.rotation.x=-Math.PI/2;road.position.set(0,-.04,-175);road.receiveShadow=true;world.add(road);
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(500,500),grassM);ground.rotation.x=-Math.PI/2;ground.position.set(0,-.13,-175);world.add(ground);
+for(const x of [-6.65,6.65]){const edge=new THREE.Mesh(new THREE.BoxGeometry(.16,.035,500),lineMat);edge.position.set(x,.01,-175);world.add(edge);}
+const laneMarks=[];for(let z=10;z>-450;z-=9)for(const x of [-2.17,2.17]){const m=new THREE.Mesh(new THREE.BoxGeometry(.12,.025,3.8),lineMat);m.position.set(x,.01,z);world.add(m);laneMarks.push(m);}
+const car=new THREE.Group();scene.add(car);
+function box(parent,w,h,d,material,x,y,z){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;}
+function buildCar(color=0xc9272c,player=false){
+ const g=new THREE.Group(),paint=mat(color,.27,.52),black=mat(0x101419,.8),glass=mat(player?0x163d50:0x25343e,.18,.3);
+ box(g,1.78,.48,3.65,paint,0,.68,0);
+ // sculpted hood, cabin, roof and bumpers
+ box(g,1.65,.24,1.05,paint,0,.91,-1.05);
+ box(g,1.48,.62,1.52,paint,0,1.12,.25);
+ box(g,1.35,.43,1.2,glass,0,1.42,.28);
+ box(g,1.82,.2,.24,chrome,0,.54,-1.79);
+ box(g,1.82,.2,.24,black,0,.53,1.79);
+ box(g,.4,.12,.12,lamp,-.57,.77,-1.84);box(g,.4,.12,.12,lamp,.57,.77,-1.84);
+ box(g,.34,.1,.1,tail,-.57,.77,1.84);box(g,.34,.1,.1,tail,.57,.77,1.84);
+ for(const x of [-.94,.94])for(const z of [-1.12,1.12]){const wheel=new THREE.Mesh(new THREE.CylinderGeometry(.34,.34,.2,16),rubber);wheel.rotation.z=Math.PI/2;wheel.position.set(x,.36,z);wheel.castShadow=true;g.add(wheel);const hub=new THREE.Mesh(new THREE.CylinderGeometry(.16,.16,.21,12),chrome);hub.rotation.z=Math.PI/2;hub.position.copy(wheel.position);g.add(hub);}
+ // mirrors
+ for(const x of [-.91,.91])box(g,.18,.12,.27,paint,x,1.1,-.25);
+ if(player){box(g,.55,.07,.14,mat(0x16191c,.35,.7),0,.99,-1.38);}
+ return g;
 }
-function roundRect(x,y,w,h,r){ctx.beginPath();ctx.roundRect(x,y,w,h,r);}
-function background(){
- const s=stages[stage];ctx.fillStyle=s.sky;ctx.fillRect(0,0,420,620);
- ctx.fillStyle=stage===1?'#c68d4c':stage===2?'#17232d':stage===4?'#29203b':'#285044';ctx.fillRect(0,0,65,620);ctx.fillRect(355,0,65,620);
- if(stage===2||stage===4){for(let i=0;i<7;i++){let y=(i*105+roadOffset*1.7)%700-70;ctx.fillStyle=stage===4?'#8c4cff':'#1c2a3d';ctx.fillRect(12,y,38,65);ctx.fillRect(368,y,38,65);ctx.fillStyle='#f4d16a';ctx.fillRect(22,y+12,5,6);ctx.fillRect(38,y+12,5,6);}}
- ctx.fillStyle=s.road;ctx.fillRect(65,0,290,620);
- ctx.fillStyle='#d8d6bd';ctx.fillRect(70,0,3,620);ctx.fillRect(347,0,3,620);
- ctx.fillStyle=stage===4?'#c17cff':'#e8e6cf';for(let y=-70;y<650;y+=95){let yy=(y+roadOffset)%700;ctx.fillRect(162,yy,5,48);ctx.fillRect(253,yy,5,48);}
- if(stage===3){ctx.strokeStyle='#bde7ff66';ctx.lineWidth=2;for(let i=0;i<28;i++){let x=(i*53+roadOffset*2)%420,y=(i*97+roadOffset*3)%620;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-8,y+18);ctx.stroke();}}
-}
-function spawnObject(){
- const lane=lanes[Math.floor(Math.random()*3)];
- if(Math.random()<.72)objects.push({type:'car',x:lane,y:-60,color:['#f15b5b','#f2bd4e','#51b6e8','#b47af0'][Math.floor(Math.random()*4)]});
- else objects.push({type:'coin',x:lane,y:-25});
-}
-let last=0;
-function loop(t){if(!running||paused)return;let dt=Math.min((t-last)/16.67||1,2);last=t;update(dt);render();requestAnimationFrame(loop);}
-function update(dt){
- const s=stages[stage];distance+=s.speed*dt*.45;roadOffset=(roadOffset+s.speed*dt*2.2)%95;
- if(keys.left)carX-=4.3*dt;if(keys.right)carX+=4.3*dt;carX=Math.max(91,Math.min(329,carX));
- spawn-=dt;if(spawn<=0){spawnObject();spawn= Math.max(24,75-stage*8)*(.65+Math.random()*.7);}
- for(let o of objects){o.y+=(o.type==='coin'?s.speed*2.1:s.speed*1.65)*dt;}
- objects=objects.filter(o=>o.y<670);
- for(let o of objects){if(o.hit)continue;let dx=Math.abs(o.x-carX),dy=Math.abs(o.y-510);
- if(o.type==='coin'&&dx<25&&dy<34){coins++;o.hit=true;}
- if(o.type==='car'&&dx<27&&dy<43){show('CRASH! 💥',`Distance: ${Math.floor(distance)} m • Coins: ${coins}. Try again and dodge the traffic.`,'RETRY STAGE ↻');return;}}
- if(distance>=s.goal){if(stage<stages.length-1){stage++;show('STAGE COMPLETE! ✨',`${s.name} complete! Next up: ${stages[stage].name}.`,'NEXT STAGE ▶');}else{show('YOU ARE A LEGEND! 🏆',`All 5 stages cleared! Distance: ${Math.floor(distance)} m • Coins: ${coins}.`,'RACE AGAIN ↻');stage=0;}return;}
- $('stage').textContent=`${stage+1} / 5`;$('distance').textContent=Math.floor(distance)+' m';$('coins').textContent=coins;$('bar').style.width=(distance/s.goal*100)+'%';
-}
-function render(){background();for(const o of objects){if(o.hit)continue;if(o.type==='coin'){ctx.beginPath();ctx.fillStyle='#ffd84d';ctx.arc(o.x,o.y,10,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#fff2a1';ctx.lineWidth=3;ctx.stroke();ctx.fillStyle='#98600a';ctx.font='bold 12px sans-serif';ctx.textAlign='center';ctx.fillText('$',o.x,o.y+4);}else drawCar(o.x,o.y,o.color);}
- drawCar(carX,510,'#28d9a1',true);
- ctx.fillStyle='#ffffffcc';ctx.font='bold 12px system-ui';ctx.textAlign='left';ctx.fillText(stages[stage].name.toUpperCase(),84,24);
-}
-function togglePause(){if(!running)return;paused=!paused;if(paused){$('pauseBtn').textContent='▶ Resume';showPause();}else{$('overlay').classList.add('hidden');$('pauseBtn').textContent='Ⅱ Pause';last=0;requestAnimationFrame(loop);}}
-function showPause(){ $('title').textContent='PAUSED';$('message').textContent='Take a breather. Ready to hit the road again?';$('startBtn').textContent='RESUME ▶';$('levels').innerHTML='';$('overlay').classList.remove('hidden');}
-$('startBtn').addEventListener('click',()=>{if(paused){paused=false;$('overlay').classList.add('hidden');$('pauseBtn').textContent='Ⅱ Pause';last=0;requestAnimationFrame(loop);}else if(over){reset();}else reset();});
-$('pauseBtn').addEventListener('click',togglePause);
-window.addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();if(e.key==='ArrowLeft'||e.key.toLowerCase()==='a')keys.left=true;if(e.key==='ArrowRight'||e.key.toLowerCase()==='d')keys.right=true;if(e.key==='Escape')togglePause();});
-window.addEventListener('keyup',e=>{if(e.key==='ArrowLeft'||e.key.toLowerCase()==='a')keys.left=false;if(e.key==='ArrowRight'||e.key.toLowerCase()==='d')keys.right=false;});
-function hold(id,key){const el=$(id);el.addEventListener('pointerdown',e=>{e.preventDefault();keys[key]=true;el.setPointerCapture?.(e.pointerId);});['pointerup','pointercancel','lostpointercapture'].forEach(ev=>el.addEventListener(ev,()=>keys[key]=false));}
-hold('left','left');hold('right','right');
-canvas.addEventListener('pointerdown',e=>{const r=canvas.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*420;keys[x<210?'left':'right']=true;setTimeout(()=>{keys.left=false;keys.right=false;},180);});
-stagePills();render();
+const playerCar=buildCar(0x147ed1,true);car.add(playerCar);car.position.set(0,0,4.3);
+function makeTree(x,z,kind=0){const g=new THREE.Group();if(stage===1){const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.12,.18,1.8,7),mat(0x725039));trunk.position.y=.9;g.add(trunk);const top=new THREE.Mesh(new THREE.CylinderGeometry(.05,.62,2.5,8),mat(0x47743d));top.position.y=2.6;g.add(top);}else{const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.12,.2,1.8,7),mat(0x5d4938));trunk.position.y=.9;g.add(trunk);const top=new THREE.Mesh(new THREE.ConeGeometry(1.05,2.6,7),mat(stage===2?0x2c3d55:0x326342));top.position.y=2.7;g.add(top);}g.position.set(x,0,z);scene.add(g);decor.push(g);}
+function addScenery(){decor.forEach(o=>scene.remove(o));decor=[];for(let z=15;z>-440;z-=13){makeTree(-10-Math.random()*9,z);makeTree(10+Math.random()*9,z-5);if(stage===2||stage===4){for(const x of [-9,9]){const pole=new THREE.Group();box(pole,.12,4,.12,chrome,0,2,0);const bulb=new THREE.PointLight(stage===4?0xb65cff:0xffdca0,2,12);bulb.position.set(0,4,0);pole.add(bulb);pole.position.set(x,0,z-3);scene.add(pole);decor.push(pole);}}}}
+function setStage(){const s=stages[stage];scene.background.setHex(s.sky);scene.fog.color.setHex(s.sky);scene.fog.near=stage===2?45:70;scene.fog.far=stage===2?165:230;ground.material=mat(s.ground,1);road.material=mat(s.road,.95);$('stageName').textContent=s.name;$('stage').textContent=(stage+1)+' / 5';$('bar').firstElementChild.style.width='0%';addScenery();}
+function spawnTraffic(){const lane=[-4.25,0,4.25][Math.floor(Math.random()*3)];if(Math.random()<.72){const colors=[0xe2e7ed,0xe7a82f,0x1caa8b,0x9a7be7,0xb72e37,0x343b46];const g=buildCar(colors[Math.floor(Math.random()*colors.length)]);g.position.set(lane,0,-115);g.rotation.y=Math.PI;scene.add(g);objects.push({type:'car',mesh:g,z:-115});}else{const m=new THREE.Mesh(new THREE.TorusGeometry(.35,.12,8,18),mat(0xffd343,.25,.45));m.position.set(lane,1.1,-115);m.rotation.x=Math.PI/2;scene.add(m);objects.push({type:'coin',mesh:m,z:-115});}}
+function show(title,desc,button){started=false;$('message').classList.remove('hide');$('message').innerHTML='<div class="card"><h1>'+title+'</h1><p>'+desc+'</p><button class="btn" id="again">'+button+'</button><div class="tiny">Steer with ◀ ▶ · Hold GAS to accelerate · Brake to slow down</div></div>';$('again').onclick=()=>{if(ended&&stage>=4)stage=0;startGame();};}
+function startGame(){objects.forEach(o=>scene.remove(o.mesh));objects=[];distance=0;coins=0;speed=0;carX=0;spawnTimer=0;roadTravel=0;ended=false;paused=false;started=true;last=0;$('message').classList.add('hide');$('pause').textContent='Ⅱ Pause';setStage();updateHud();requestAnimationFrame(loop);}
+function updateHud(){$('speed').textContent=Math.round(speed*21);$('dist').textContent=Math.floor(distance);$('coins').textContent=coins;$('bar').firstElementChild.style.width=Math.min(100,distance/stages[stage].goal*100)+'%';}
+function loop(t){if(!started||paused)return;const dt=Math.min((t-last)/1000||.016,.04);last=t;const s=stages[stage];const gas=keys.gas||keys.up,brake=keys.brake||keys.down;const target=gas?10.5:5.5;speed+=((brake?-8:target)-speed)*Math.min(1,dt*(brake?2.5:gas?1.5:.4));speed=Math.max(0,Math.min(13,speed));const movement=(keys.left?-1:0)+(keys.right?1:0);carX+=movement*dt*(2.5+speed*.42);carX=Math.max(-4.85,Math.min(4.85,carX));car.position.x+=(carX-car.position.x)*Math.min(1,dt*9);car.rotation.z=-movement*.09;distance+=speed*dt*2.6;roadTravel+=speed*dt*3.2;laneMarks.forEach(m=>{m.position.z+=speed*dt*3.2;if(m.position.z>12)m.position.z-=459;});decor.forEach(o=>{o.position.z+=speed*dt*3.2;if(o.position.z>20)o.position.z-=455;});spawnTimer-=dt;if(spawnTimer<=0){spawnTraffic();spawnTimer=Math.max(.55,1.7-speed*.065)*(0.75+Math.random()*.65);}
+ for(let i=objects.length-1;i>=0;i--){const o=objects[i];o.z+=speed*dt*3.2;o.mesh.position.z=o.z;if(o.type==='coin')o.mesh.rotation.z+=dt*2.5;if(o.type==='car'&&Math.abs(o.z-car.position.z)<2.8&&Math.abs(o.mesh.position.x-car.position.x)<1.7){show('CRASH! 💥','You drove '+Math.floor(distance)+' m and collected '+coins+' coins. Try again and avoid the traffic.','RETRY RACE ↻');return;}if(o.type==='coin'&&Math.abs(o.z-car.position.z)<2.2&&Math.abs(o.mesh.position.x-car.position.x)<1.5){coins++;scene.remove(o.mesh);objects.splice(i,1);continue;}if(o.z>14){scene.remove(o.mesh);objects.splice(i,1);}}
+ const desired=new THREE.Vector3(car.position.x*.48,5.1,12.7);camera.position.lerp(desired,dt*2.8);camera.lookAt(car.position.x*.3,1.1,-10);sun.position.x=-12+car.position.x*.3;updateHud();if(distance>=s.goal){if(stage<4){const name=s.name;stage++;show('STAGE COMPLETE! 🏁',name+' cleared! Next: '+stages[stage].name+'. Get ready for the next road.','NEXT STAGE ▶');}else{ended=true;show('CHAMPION! 🏆','You cleared all 5 stages! Total coins: '+coins+'. You are the highway legend.','RACE AGAIN ↻');}return;}renderer.render(scene,camera);requestAnimationFrame(loop);}
+function pause(){if(!started)return;paused=!paused;$('pause').textContent=paused?'▶ Resume':'Ⅱ Pause';if(paused)showPause();else{$('message').classList.add('hide');last=0;requestAnimationFrame(loop);}}
+function showPause(){$('message').classList.remove('hide');$('message').innerHTML='<div class="card"><h1>PAUSED</h1><p>Take a break, driver.</p><button class="btn" id="resume">RESUME ▶</button></div>';$('resume').onclick=()=>{paused=false;$('message').classList.add('hide');$('pause').textContent='Ⅱ Pause';last=0;requestAnimationFrame(loop);};}
+$('start').onclick=startGame;$('pause').onclick=pause;
+function hold(id,key){const el=$(id);const down=e=>{e.preventDefault();keys[key]=true;el.classList.add('down');};const up=e=>{e.preventDefault();keys[key]=false;el.classList.remove('down');};el.addEventListener('pointerdown',down);el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up);el.addEventListener('pointerleave',up);}
+hold('left','left');hold('right','right');hold('gas','gas');hold('brake','brake');
+addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(['arrowleft','arrowright','arrowup','arrowdown',' '].includes(k))e.preventDefault();if(k==='arrowleft'||k==='a')keys.left=true;if(k==='arrowright'||k==='d')keys.right=true;if(k==='arrowup'||k==='w')keys.up=true;if(k==='arrowdown'||k==='s')keys.down=true;if(k===' ')keys.gas=true;});
+addEventListener('keyup',e=>{const k=e.key.toLowerCase();if(k==='arrowleft'||k==='a')keys.left=false;if(k==='arrowright'||k==='d')keys.right=false;if(k==='arrowup'||k==='w')keys.up=false;if(k==='arrowdown'||k==='s')keys.down=false;if(k===' ')keys.gas=false;});
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+setStage();renderer.render(scene,camera);
 })();
 </script></body></html>
